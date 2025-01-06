@@ -1,6 +1,5 @@
 import sys
-import client
-from server import client_list
+#import client
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
 
@@ -13,20 +12,20 @@ class WindowClass(QMainWindow, form_class) :
     def __init__(self) :
         super().__init__()
         self.setupUi(self)
-        self.setWindowTitle("제목")
+        self.setWindowTitle("채팅창")
         self.mainWidget.setCurrentIndex(0)
         self.loginBtn.clicked.connect(self.fncLogin)
         self.adminBtn.clicked.connect(self.fncAdminPage)
         self.goMainBtn.clicked.connect(self.fncMainPage)
-        self.quitBtn.clicked.connect(client.fncQuit)
-        self.sendBtn.clicked.connect(client.sendMsg)
+        #self.quitBtn.clicked.connect(client.fncQuit)
+        #self.sendBtn.clicked.connect(client.sendMsg)
 
     def fncLogin(self):
         # 입력창에 입력한 닉네임 가져오기
         nickname = self.inputNick.text()
 
         # 닉네임 셋팅 함수
-        client_socket = client.fncSetNick(self, nickname)
+        #client_socket = client.fncSetNick(self, nickname)
 
         # 닉네임 셋팅 후 메인화면으로 이동
         self.mainWidget.setCurrentIndex(1)
