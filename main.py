@@ -1,6 +1,6 @@
 import sys
 import client
-import server
+from server import client_list
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
 
@@ -19,16 +19,31 @@ class WindowClass(QMainWindow, form_class) :
         self.adminBtn.clicked.connect(self.fncAdminPage)
         self.goMainBtn.clicked.connect(self.fncMainPage)
         self.quitBtn.clicked.connect(client.fncQuit)
-        self.serverStartBtn.clicked.connect(server.startServer)
+        self.sendBtn.clicked.connect(client.sendMsg)
 
     def fncLogin(self):
+        # 입력창에 입력한 닉네임 가져오기
+        nickname = self.inputNick.text()
+
+        # 닉네임 셋팅 함수
+        client_socket = client.fncSetNick(self, nickname)
+
+        # 닉네임 셋팅 후 메인화면으로 이동
         self.mainWidget.setCurrentIndex(1)
+        self.fncUserListPage()
+
 
     def fncAdminPage(self):
+        # 관리자 페이지
         self.mainWidget.setCurrentIndex(2)
 
     def fncMainPage(self):
+        # 로그인 페이지
         self.mainWidget.setCurrentIndex(0)
+
+    def fncUserListPage(self):
+        self.loginUserList.setColumnWidth(0, 390)
+        print(client_list)
 
 if __name__ == "__main__" :
     #QApplication : 프로그램을 실행시켜주는 클래스

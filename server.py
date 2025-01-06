@@ -1,21 +1,23 @@
 import socket
 import threading
 
-client_list = []
-
+chat_list = list()
+client_list = list()
 
 def handle_client(client_socket, client_address):
     nickValidate = False
+    global client_list
+
     print(f'{client_address}에서 접속이 확인되었습니다.')
+
     while not nickValidate:
         data = client_socket.recv(1024).decode()
-        # 닉네임 유효성 검사
         if not data:
             client_socket.send("NOT".encode())
         else:
             nickValidate = True
-            client_socket.send("OK".encode())
-
+            client_list.append(client_address[0])
+            client_socket.send(client_address[0].encode())
 
     # 접속한 사람들 대화
     while True:
@@ -26,6 +28,7 @@ def handle_client(client_socket, client_address):
         if data == "q":
             client_socket.send("BYE".encode())
             client_socket.close()
+
 
         client_socket.send(data.encode())
 
@@ -40,7 +43,6 @@ def startServer():
 
     while True:
         client_socket, client_address = server_socket.accept()
-        client_list.append(client_address)
 
         thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
         thread.start()

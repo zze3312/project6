@@ -26,10 +26,10 @@
     <string notr="true">background-color: rgb(255, 255, 255);</string>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page">
-    <widget class="QLineEdit" name="lineEdit">
+    <widget class="QLineEdit" name="inputNick">
      <property name="geometry">
       <rect>
        <x>80</x>
@@ -77,9 +77,9 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>0</y>
+       <y>20</y>
        <width>411</width>
-       <height>681</height>
+       <height>661</height>
       </rect>
      </property>
      <property name="currentIndex">
@@ -89,11 +89,36 @@
       <attribute name="title">
        <string>접속자</string>
       </attribute>
+      <widget class="QTableWidget" name="loginUserList">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>0</y>
+         <width>391</width>
+         <height>621</height>
+        </rect>
+       </property>
+       <column>
+        <property name="text">
+         <string>접속자명</string>
+        </property>
+       </column>
+      </widget>
      </widget>
      <widget class="QWidget" name="tab_2">
       <attribute name="title">
        <string>대화목록</string>
       </attribute>
+      <widget class="QListWidget" name="chatList">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>0</y>
+         <width>391</width>
+         <height>621</height>
+        </rect>
+       </property>
+      </widget>
      </widget>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
@@ -102,9 +127,9 @@
       <widget class="QPushButton" name="quitBtn">
        <property name="geometry">
         <rect>
-         <x>300</x>
+         <x>340</x>
          <y>10</y>
-         <width>88</width>
+         <width>51</width>
          <height>27</height>
         </rect>
        </property>
@@ -112,23 +137,75 @@
         <string>나가기</string>
        </property>
       </widget>
+      <widget class="QListWidget" name="listWidget">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>50</y>
+         <width>381</width>
+         <height>521</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="chatMsg">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>580</y>
+         <width>331</width>
+         <height>31</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="sendBtn">
+       <property name="geometry">
+        <rect>
+         <x>340</x>
+         <y>580</y>
+         <width>51</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>전송</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_2">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>88</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>방정보</string>
+       </property>
+      </widget>
      </widget>
+    </widget>
+    <widget class="QLabel" name="userInfotxt">
+     <property name="geometry">
+      <rect>
+       <x>220</x>
+       <y>20</y>
+       <width>171</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
+     </property>
+     <property name="text">
+      <string>닉네임(127.0.0.1)</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
     </widget>
    </widget>
    <widget class="QWidget" name="page_3">
-    <widget class="QPushButton" name="serverStartBtn">
-     <property name="geometry">
-      <rect>
-       <x>30</x>
-       <y>110</y>
-       <width>351</width>
-       <height>51</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>서버열기</string>
-     </property>
-    </widget>
     <widget class="QPushButton" name="goMainBtn">
      <property name="geometry">
       <rect>
