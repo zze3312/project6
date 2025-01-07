@@ -87,6 +87,7 @@ def recvMsg(sock):
             print("잘못된 JSON 형식의 데이터가 들어왔습니다.")
             return
 
+        # TODO : 화면에 뿌려주는 기능으로 변경
         print(recv_data['data'])
 
 def fncQuit():
