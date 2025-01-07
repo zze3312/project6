@@ -6,8 +6,9 @@ from queue import Queue
 sock_cnt = 0
 client_socket_list = []
 user_nick_list = []
+chat_list = []
 
-def startServer(host='127.0.0.1', port = 9999):
+def startServer(host='127.0.0.1', port = 9997):
 
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.bind((host, port))
@@ -25,20 +26,32 @@ def startServer(host='127.0.0.1', port = 9999):
         data = client_socket.recv(1024)
         print('닉네임 등록 요청 받음....')
         try:
-            recv_data = json.loads(data.decode())
+            recv_data = json.loads(data.decode('utf-8'))
         except json.JSONDecodeError:
             print("잘못된 JSON 형식의 데이터가 들어왔습니다.")
             return
 
-        if recv_data['type'] == 'nick' and recv_data['data'] != '':
-            send_data = {'status': 'response', 'type': 'nick', 'data': 'OK'}
-            client_socket.send(json.dumps(send_data).encode())
-        else:
-            print('닉네임 이상해....')
+        while True:
+            if recv_data['data'] != '':
+                send_data = {'status': 'response', 'type': 'nick', 'data': 'OK'}
+            else:
+                send_data = {'status': 'response', 'type': 'nick', 'data': 'ER'}
+                print('닉네임 이상해....')
 
-        print('닉네임 등록 요청 처리 결과 보냄...')
+            client_socket.send(json.dumps(send_data).encode('utf-8'))
+            print('닉네임 등록 요청 처리 결과 보냄...')
+            print(f'클라이언트 결과 확인 중...{sock_cnt}')
+            data = client_socket.recv(1024)
+            try:
+                recv_data = json.loads(data.decode('utf-8'))
+                print(recv_data)
+            except json.JSONDecodeError:
+                print(f"잘못된 JSON 형식의 데이터가 들어왔습니다. :  {repr(data)}")
+                return
+            if recv_data['type'] == 'nick' and recv_data['data'] == 'THANKS':
+                break
 
-        if(sock_cnt > 1):
+        if sock_cnt > 1:
             send_queue.put('NEW CONN')
             sTread = threading.Thread(target=send_msg, args=(client_socket_list, send_queue))
             sTread.start()
@@ -69,22 +82,37 @@ def send_msg(client_socket_list, send_queue):
                 if recv[1] != client_socket:
                     # client 본인이 보낸 메시지는 받을 필요가 없기 때문에 제외시킴
                     print(data)
-                    client_socket.send(json.dumps(data).encode())
+                    client_socket.send(json.dumps(data).encode('utf-8'))
                 else:
-                    pass
+                    if data['type'] == 'exit':
+                        client_socket.send(json.dumps(data).encode('utf-8'))
+                        client_socket.close()
         except:
             pass
 
 
 def recv_msg(conn, count, send_queue):
+    global user_nick_list
     while True:
-        message = json.loads(conn.recv(1024).decode())
+        data = conn.recv(1024)
+        print('메세지 전달 요청 받음...')
+        try:
+            message = json.loads(data.decode('utf-8'))
+        except json.JSONDecodeError:
+            print("잘못된 JSON 형식의 데이터가 들어왔습니다.")
+            return
+
         print(f'클라이언트로부터 받은 메세지 : {message}')
-        if(message['type'] == 'quit'):
+
+        if message['type'] == 'quit':
             message['type'] = 'exit'
             message['data'] = '< ' + message['user'] + ' > 님이 퇴장하셨습니다'
             send_queue.put([message, conn, count])
-        else:
+        elif message['type'] == 'msg':
             message['data'] = '< ' + message['user'] + ' > ' + message['data']
             send_queue.put([message, conn, count])
+        elif message['type'] == 'user':
+            message['data'] = user_nick_list
+            conn.send(json.dumps(data).encode('utf-8'))
         # 각각의 클라이언트의 메시지, 소켓정보, 쓰레드 번호를 send로 보냄
+

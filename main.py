@@ -8,6 +8,7 @@ import client
 #UI파일 연결
 #단, UI파일은 Python 코드 파일과 같은 디렉토리에 위치해야한다.
 form_class = uic.loadUiType("main.ui")[0]
+client_socket = ''
 
 #화면을 띄우는데 사용되는 Class 선언
 class WindowClass(QMainWindow, form_class) :
@@ -19,17 +20,18 @@ class WindowClass(QMainWindow, form_class) :
         self.loginBtn.clicked.connect(self.fncLogin)
         self.adminBtn.clicked.connect(self.fncAdminPage)
         self.goMainBtn.clicked.connect(self.fncMainPage)
+        self.reloadUserList.clicked.connect(self.fncUserListPage)
         #self.quitBtn.clicked.connect(client.fncQuit)
         #self.sendBtn.clicked.connect(client.sendMsg)
 
     def fncLogin(self):
         # 서버에 접속
-        client.connectClient(self)
-
+        global client_socket
+        client_socket = client.connectClient(self)
+        print(client_socket)
         # 접속 후 메인화면으로 이동
         self.mainWidget.setCurrentIndex(1)
         self.fncUserListPage()
-
 
     def fncAdminPage(self):
         # 관리자 페이지
@@ -40,7 +42,10 @@ class WindowClass(QMainWindow, form_class) :
         self.mainWidget.setCurrentIndex(0)
 
     def fncUserListPage(self):
+        global client_socket
         self.loginUserList.setColumnWidth(0, 390)
+        client.getUserList(client_socket)
+
 
 if __name__ == "__main__" :
     #QApplication : 프로그램을 실행시켜주는 클래스
