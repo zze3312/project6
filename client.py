@@ -107,6 +107,6 @@ def getUserList(sock):
         print("잘못된 JSON 형식의 데이터가 들어왔습니다.")
         return
 
-    print(recv_data['data'])
+    print(f'접속자명단 : {recv_data['data']}')
 
 # connectClient()

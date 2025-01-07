@@ -33,6 +33,7 @@ def startServer(host='127.0.0.1', port = 9997):
 
         while True:
             if recv_data['data'] != '':
+                user_nick_list.append(recv_data['data'])
                 send_data = {'status': 'response', 'type': 'nick', 'data': 'OK'}
             else:
                 send_data = {'status': 'response', 'type': 'nick', 'data': 'ER'}
@@ -107,12 +108,16 @@ def recv_msg(conn, count, send_queue):
         if message['type'] == 'quit':
             message['type'] = 'exit'
             message['data'] = '< ' + message['user'] + ' > 님이 퇴장하셨습니다'
+            user_nick_list.remove(message['user'])
             send_queue.put([message, conn, count])
         elif message['type'] == 'msg':
             message['data'] = '< ' + message['user'] + ' > ' + message['data']
             send_queue.put([message, conn, count])
         elif message['type'] == 'user':
+            print("여긴 왔어요~ ")
             message['data'] = user_nick_list
-            conn.send(json.dumps(data).encode('utf-8'))
+            conn.send(json.dumps(message).encode('utf-8'))
+        else:
+            pass
         # 각각의 클라이언트의 메시지, 소켓정보, 쓰레드 번호를 send로 보냄
 
