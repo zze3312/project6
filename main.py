@@ -3,6 +3,8 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
 
+import client
+
 #UI파일 연결
 #단, UI파일은 Python 코드 파일과 같은 디렉토리에 위치해야한다.
 form_class = uic.loadUiType("main.ui")[0]
@@ -21,13 +23,10 @@ class WindowClass(QMainWindow, form_class) :
         #self.sendBtn.clicked.connect(client.sendMsg)
 
     def fncLogin(self):
-        # 입력창에 입력한 닉네임 가져오기
-        nickname = self.inputNick.text()
+        # 서버에 접속
+        client.connectClient(self)
 
-        # 닉네임 셋팅 함수
-        #client_socket = client.fncSetNick(self, nickname)
-
-        # 닉네임 셋팅 후 메인화면으로 이동
+        # 접속 후 메인화면으로 이동
         self.mainWidget.setCurrentIndex(1)
         self.fncUserListPage()
 
@@ -42,7 +41,6 @@ class WindowClass(QMainWindow, form_class) :
 
     def fncUserListPage(self):
         self.loginUserList.setColumnWidth(0, 390)
-        print(client_list)
 
 if __name__ == "__main__" :
     #QApplication : 프로그램을 실행시켜주는 클래스

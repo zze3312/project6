@@ -1,56 +1,90 @@
+import json
 import socket
 import threading
+from queue import Queue
 
-client_cnt = int()
-client_socket_list = list()
+sock_cnt = 0
+client_socket_list = []
+user_nick_list = []
 
-def startServer():
+def startServer(host='127.0.0.1', port = 9999):
+
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address_ip = '127.0.0.1'
-    server_address_port = 9999
-    server_address = (server_address_ip, server_address_port)
-    print(server_address)
+    server_sock.bind((host, port))
+    server_sock.listen()
+    print(f'서버가 실행되었습니다 : {host} {port}')
 
-    server_sock.bind(server_address)
-    server_sock.listen(5)
+    global sock_cnt, client_socket_list
+    send_queue = Queue()
 
-    print("서버가 실행되었습니다.")
-    try:
-        while True:
-            client_socket, client_addr = server_sock.accept()
-            thread = threading.Thread(target=handle_client, args=(client_socket, client_addr))
-            thread.start()
+    while True:
+        sock_cnt += 1
+        client_socket, client_addr = server_sock.accept()
+        client_socket_list.append(client_socket)
 
-    except Exception as e:
-        print("에러 : ", e)
+        data = client_socket.recv(1024)
+        print('닉네임 등록 요청 받음....')
+        try:
+            recv_data = json.loads(data.decode())
+        except json.JSONDecodeError:
+            print("잘못된 JSON 형식의 데이터가 들어왔습니다.")
+            return
 
-    finally:
-        server_sock.close()
-
-def handle_client(client_socket, client_address):
-    nick_validate = False
-    global client_socket_list
-    print(f"{client_address}에서 접속이 확인되었습니다.")
-
-    while not nick_validate:
-        data = client_socket.recv(1024).decode()
-        print("클라이언트 : ", data)
-
-        if not data:
-            client_socket.send("NOT".encode())
+        if recv_data['type'] == 'nick' and recv_data['data'] != '':
+            send_data = {'status': 'response', 'type': 'nick', 'data': 'OK'}
+            client_socket.send(json.dumps(send_data).encode())
         else:
-            nick_validate = True
-            client_socket_list.append(client_socket)
-            client_socket.send(client_address[0].encode())
+            print('닉네임 이상해....')
 
-    data = client_socket.recv(1024).decode()
-    send_msg(client_socket_list, data)
+        print('닉네임 등록 요청 처리 결과 보냄...')
+
+        if(sock_cnt > 1):
+            send_queue.put('NEW CONN')
+            sTread = threading.Thread(target=send_msg, args=(client_socket_list, send_queue))
+            sTread.start()
+            pass
+        else:
+            sTread = threading.Thread(target=send_msg, args=(client_socket_list, send_queue))
+            sTread.start()
+
+        # 소켓에 연결된 각각의 클라이언트의 메시지를 받을 쓰레드
+        rThread = threading.Thread(target=recv_msg, args=(client_socket, sock_cnt, send_queue))
+        rThread.start()
 
 
 # 접속자에게 메세지 전달
-def send_msg(client_socket_list, msg):
-    lock = threading.Lock()
-    lock.acquire()
-    for client_socket in client_socket_list:
-        client_socket.send(msg)
-    lock.release()
+def send_msg(client_socket_list, send_queue):
+    while True:
+        try:
+            # 새롭게 추가된 클라이언트가 있을 경우 Send 쓰레드를 새롭게 만들기 위해 루프를 빠져나감
+            recv = send_queue.get()
+            if recv == 'NEW CONN':
+                print('NEW CONN')
+                break
+
+            # for 문을 돌면서 모든 클라이언트에게 동일한 메시지를 보냄
+            for client_socket in client_socket_list:
+                data = recv[0]
+
+                if recv[1] != client_socket:
+                    # client 본인이 보낸 메시지는 받을 필요가 없기 때문에 제외시킴
+                    print(data)
+                    client_socket.send(json.dumps(data).encode())
+                else:
+                    pass
+        except:
+            pass
+
+
+def recv_msg(conn, count, send_queue):
+    while True:
+        message = json.loads(conn.recv(1024).decode())
+        print(f'클라이언트로부터 받은 메세지 : {message}')
+        if(message['type'] == 'quit'):
+            message['type'] = 'exit'
+            message['data'] = '< ' + message['user'] + ' > 님이 퇴장하셨습니다'
+            send_queue.put([message, conn, count])
+        else:
+            message['data'] = '< ' + message['user'] + ' > ' + message['data']
+            send_queue.put([message, conn, count])
+        # 각각의 클라이언트의 메시지, 소켓정보, 쓰레드 번호를 send로 보냄
