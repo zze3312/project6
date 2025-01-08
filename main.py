@@ -28,7 +28,7 @@ class WindowClass(QMainWindow, form_class) :
         self.reloadChatList.clicked.connect(self.fncChatListPage)
         self.chatList.cellDoubleClicked.connect(self.enterChat)
         #self.quitBtn.clicked.connect(client.fncQuit)
-        #self.sendBtn.clicked.connect(client.sendMsg)
+        self.sendBtn.clicked.connect(self.fncSendMsg)
 
     def fncLogin(self):
         # 서버에 접속
@@ -81,12 +81,17 @@ class WindowClass(QMainWindow, form_class) :
 
     def createChat(self):
         global client_socket
-        client.reqCreateChatRoom(client_socket)
+        client.reqCreateChatRoom(self, client_socket)
         self.fncChatListPage()
 
     def enterChat(self, row, col):
         data = self.chatList.item(row, col)
-        client.reqConnectChat(client_socket, data.text())
+        client.reqConnectChat(self, client_socket, data.text())
+
+    def fncSendMsg(self):
+        global client_socket
+        msg = self.chatMsg.text()
+        client.sendMsg(client_socket, msg)
 
 if __name__ == "__main__" :
     #QApplication : 프로그램을 실행시켜주는 클래스

@@ -8,7 +8,7 @@ nickname = ''
 client_host = ''
 
 
-def connectClient(self, server_host = '10.10.21.115', server_port = 9999):
+def connectClient(self, server_host = '127.0.0.1', server_port = 9999):
     global nickname, client_host
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -62,27 +62,24 @@ def connectClient(self, server_host = '10.10.21.115', server_port = 9999):
 
 
 
-def sendMsg(sock):
+def sendMsg(sock, msg):
     global nickname, client_host
-    # nickname = self.userInfotxt.text()
-    # msg = self.chatMsg.text()
-    while True:
-        msg = input()
-        if msg != 'quit':
-            print('나가기 요청이 아니어서 들어왔습니다...')
-            send_data = {'status' : 'request', 'type' : 'msg', 'data' : msg, 'user' : nickname, 'user_ip' : client_host }
-            print(f'서버에게 보낼 데이터 : {send_data}')
-            print(f'서버정보 : {sock}')
-            
-            sock.send(json.dumps(send_data).encode('utf-8'))
-        else:
-            print('나가기 요청이어서 들어왔습니다...')
-            send_data = {'status': 'request', 'type': 'quit', 'data': '', 'user' : nickname, 'user_ip' : client_host }
-            print(f'서버에게 보낼 데이터 : {send_data}')
-            sock.send(json.dumps(send_data).encode('utf-8'))
-            break
+    print(f'가져온 메세지 : {msg}')
+    if msg != 'quit':
+        print('나가기 요청이 아니어서 들어왔습니다...')
+        send_data = {'status' : 'request', 'type' : 'msg', 'data' : msg, 'user' : nickname, 'user_ip' : client_host }
+        print(f'서버에게 보낼 데이터 : {send_data}')
+        print(f'서버정보 : {sock}')
 
-def recvMsg(sock):
+        sock.send(json.dumps(send_data).encode('utf-8'))
+    else:
+        print('나가기 요청이어서 들어왔습니다...')
+        send_data = {'status': 'request', 'type': 'quit', 'data': '', 'user' : nickname, 'user_ip' : client_host }
+        print(f'서버에게 보낼 데이터 : {send_data}')
+        sock.send(json.dumps(send_data).encode('utf-8'))
+
+
+def recvMsg(self, sock):
     while True:
         msg = sock.recv(1024)
         try:
@@ -92,7 +89,8 @@ def recvMsg(sock):
             return
 
         # TODO : 화면에 뿌려주는 기능으로 변경
-        print(recv_data['data'])
+        print(f'서버에게서 온 메세지 : {recv_data['data']}')
+        self.chatMsgList.addItem(recv_data['data'])
 
 def fncQuit():
     print('나가기 버튼 눌림')
@@ -131,7 +129,7 @@ def getChatList(sock):
     return recv_data['data']
 
 # 채팅방 생성 함수
-def reqCreateChatRoom(sock):
+def reqCreateChatRoom(self, sock):
     global nickname, client_host
     # TODO : 입력한 채팅방 이름으로 생성되도록 수정 (팝업 추가 예정)
     send_data = {'status': 'request', 'type': 'create_chat', 'data': '테스트방이름', 'user' : nickname, 'user_ip' : client_host }
@@ -148,7 +146,11 @@ def reqCreateChatRoom(sock):
 
     print(recv_data['data'])
 
-def reqConnectChat(sock, room_name):
+    if recv_data['data'] == 'OK':
+        receiveThread = threading.Thread(target=recvMsg, args=(self, sock))
+        receiveThread.start()
+
+def reqConnectChat(self, sock, room_name):
     send_data = {'status': 'request', 'type': 'connect_chat', 'data': room_name, 'user': nickname, 'user_ip': client_host}
     sock.send(json.dumps(send_data).encode('utf-8'))
     print(f'{room_name} 에 입장 요청함...')
@@ -161,3 +163,7 @@ def reqConnectChat(sock, room_name):
         return
 
     print(recv_data['data'])
+
+    if recv_data['data'] == 'OK_NEW':
+        receiveThread = threading.Thread(target=recvMsg, args=(self, sock))
+        receiveThread.start()

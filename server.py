@@ -11,7 +11,7 @@ user_nick_list = []
 chat_list = []
 chat_member_list = []
 
-def startServer(host='10.10.21.115', port = 9999):
+def startServer(host='127.0.0.1', port = 9999):
 
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.bind((host, port))
@@ -44,10 +44,13 @@ def startServer(host='10.10.21.115', port = 9999):
 
 # 메세지 전달
 def send_msg(socket_list, send_queue):
+    # [{'user': req['user'], 'user_ip' : req['user_ip'], 'conn': conn}]
+    # [message, conn, count]
     while True:
         try:
             # 새롭게 추가된 클라이언트가 있을 경우 Send 쓰레드를 새롭게 만들기 위해 루프를 빠져나감
             recv = send_queue.get()
+            print(f'send_msg -> send_queue : {recv}')
             if recv == 'NEW CONN':
                 print('NEW CONN')
                 break
@@ -55,15 +58,13 @@ def send_msg(socket_list, send_queue):
             # for 문을 돌면서 모든 클라이언트에게 동일한 메시지를 보냄
             for sock in socket_list:
                 data = recv[0]
-
-                if recv[1] != sock:
-                    # client 본인이 보낸 메시지는 받을 필요가 없기 때문에 제외시킴
-                    print(data)
-                    sock.send(json.dumps(data).encode('utf-8'))
-                else:
-                    if data['type'] == 'exit':
-                        sock.send(json.dumps(data).encode('utf-8'))
-                        sock.close()
+                print(f'send_msg -> data : {data}')
+                if data['type'] == 'exit':
+                    sock['conn'].send(json.dumps(data).encode('utf-8'))
+                    sock['conn'].close()
+                # client 본인이 보낸 메시지도 메세지내역에 보여야하므로 제한하지 않음
+                print(data)
+                sock['conn'].send(json.dumps(data).encode('utf-8'))
         except:
             pass
 
@@ -127,16 +128,16 @@ def clnt_handler(conn, count, send_queue):
             conn.send(json.dumps(message).encode('utf-8'))
         # create_chat : 채팅방 생성
         elif message['type'] == 'create_chat':
-            createChatRoom(conn, message)
+            createChatRoom(conn, message, send_queue)
         # connect_chat : 채팅방 접속
         elif message['type'] == 'connect_chat':
-            connectChatRoom(conn, message)
+            connectChatRoom(conn, message, send_queue)
         else:
             pass
         # 각각의 클라이언트의 메시지, 소켓정보, 쓰레드 번호를 send로 보냄
 
 # 채팅방 접속(목록에서)
-def connectChatRoom(conn, req):
+def connectChatRoom(conn, req, send_queue):
     room_info = {}
     print(f'< {req['data']} > 방을 찾는중....')
     # 채팅방 목록에서 채팅방 serial찾기
@@ -167,6 +168,10 @@ def connectChatRoom(conn, req):
             # 멤버로 등록
             user_info = {'user': req['user'], 'user_ip' : req['user_ip'], 'conn': conn}
             chat_member['user_list'].append(user_info)
+
+            # TODO : 해당 방의 thread 재생성
+            createThread(chat_member['user_list'], send_queue)
+
             send_data = {'status': 'response', 'type': 'connect_chat', 'data': 'OK_NEW', 'user': req['user'], 'user_ip': req['user_ip']}
             conn.send(json.dumps(send_data).encode('utf-8'))
 
@@ -174,11 +179,16 @@ def connectChatRoom(conn, req):
             return
         chat_num += 1
 
-    # TODO : 해당 방의 thread 재생성
 
+
+def createThread(socket_list, send_queue):
+    print(f'스레드 재생성 하러 들어왔어요 {socket_list}')
+    send_queue.put('NEW CONN')
+    sTread = threading.Thread(target=send_msg, args=(socket_list, send_queue))
+    sTread.start()
 
 # 채팅방 생성(단체방)
-def createChatRoom(conn, req):
+def createChatRoom(conn, req, send_queue):
     global chat_list
     # 채팅방 시리얼넘버 생성 -> 초대코드
     room_serial = createTocken(6)
@@ -191,6 +201,9 @@ def createChatRoom(conn, req):
     room_info2 = { 'serial' : room_info['serial'], 'user_list' : [{'user' : req['user'], 'user_ip' : req['user_ip'], 'conn' : conn}] }
     chat_member_list.append(room_info2)
     print(f'채팅 사용자 목록 : {chat_member_list}')
+
+    sTread = threading.Thread(target=send_msg, args=(room_info2['user_list'], send_queue))
+    sTread.start()
 
     # 정상 생성 되면 응답 보냄
     send_data = {'status': 'response', 'type': 'create_chat', 'data': 'OK', 'user': req['user'], 'user_ip': req['user_ip']}
