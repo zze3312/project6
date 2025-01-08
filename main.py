@@ -1,5 +1,7 @@
 import sys
 #import client
+from PyQt5.QtCore import *
+from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
 
@@ -20,7 +22,11 @@ class WindowClass(QMainWindow, form_class) :
         self.loginBtn.clicked.connect(self.fncLogin)
         self.adminBtn.clicked.connect(self.fncAdminPage)
         self.goMainBtn.clicked.connect(self.fncMainPage)
+        self.createChatBtn.clicked.connect(self.createChat)
+        self.connectChatBtn.clicked.connect(self.enterChat)
         self.reloadUserList.clicked.connect(self.fncUserListPage)
+        self.reloadChatList.clicked.connect(self.fncChatListPage)
+        self.chatList.cellDoubleClicked.connect(self.enterChat)
         #self.quitBtn.clicked.connect(client.fncQuit)
         #self.sendBtn.clicked.connect(client.sendMsg)
 
@@ -28,10 +34,11 @@ class WindowClass(QMainWindow, form_class) :
         # 서버에 접속
         global client_socket
         client_socket = client.connectClient(self)
-        print(client_socket)
         # 접속 후 메인화면으로 이동
         self.mainWidget.setCurrentIndex(1)
+
         self.fncUserListPage()
+        self.fncChatListPage()
 
     def fncAdminPage(self):
         # 관리자 페이지
@@ -43,9 +50,43 @@ class WindowClass(QMainWindow, form_class) :
 
     def fncUserListPage(self):
         global client_socket
-        self.loginUserList.setColumnWidth(0, 390)
-        client.getUserList(client_socket)
+        self.loginUserList.setColumnWidth(0, 440)
+        login_list = client.getUserList(client_socket)
+        print(login_list)
 
+        rowCnt = len(login_list)
+        self.loginUserList.setRowCount(rowCnt)
+
+        for row in range(rowCnt):
+            login_user = login_list[row]['user'] + '(' + login_list[row]['user_ip'] + ')'
+
+            item = QTableWidgetItem(login_user)
+            item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.loginUserList.setItem(row, 0, item)
+
+    def fncChatListPage(self):
+        global client_socket
+        self.chatList.setColumnWidth(0, 440)
+        chat_list = client.getChatList(client_socket)
+
+        rowCnt = len(chat_list)
+        self.chatList.setRowCount(rowCnt)
+
+        for row in range(rowCnt):
+            login_user = chat_list[row]['room_name']
+
+            item = QTableWidgetItem(login_user)
+            item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.chatList.setItem(row, 0, item)
+
+    def createChat(self):
+        global client_socket
+        client.reqCreateChatRoom(client_socket)
+        self.fncChatListPage()
+
+    def enterChat(self, row, col):
+        data = self.chatList.item(row, col)
+        client.reqConnectChat(client_socket, data.text())
 
 if __name__ == "__main__" :
     #QApplication : 프로그램을 실행시켜주는 클래스
