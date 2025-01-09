@@ -13,9 +13,6 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QTabBar::tab { min-width: 150px; min-height: 50px; }</string>
-  </property>
   <widget class="QStackedWidget" name="mainWidget">
    <property name="geometry">
     <rect>
@@ -29,7 +26,7 @@
     <string notr="true">background-color: rgb(255, 255, 255);</string>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QLineEdit" name="inputNick">
@@ -83,21 +80,13 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>10</y>
+       <y>20</y>
        <width>991</width>
        <height>661</height>
       </rect>
      </property>
-     <property name="font">
-      <font>
-       <pointsize>13</pointsize>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">QTabBar::tab { min-width: 150px; min-height: 70px; }</string>
-     </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -107,7 +96,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>10</y>
+         <y>50</y>
          <width>971</width>
          <height>571</height>
         </rect>
@@ -127,6 +116,19 @@
         </property>
        </column>
       </widget>
+      <widget class="QPushButton" name="reloadUserList">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>971</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>새로고침</string>
+       </property>
+      </widget>
      </widget>
      <widget class="QWidget" name="tab_2">
       <attribute name="title">
@@ -136,7 +138,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>10</y>
+         <y>50</y>
          <width>971</width>
          <height>571</height>
         </rect>
@@ -167,130 +169,89 @@
       </widget>
      </widget>
     </widget>
+    <widget class="QLabel" name="userInfotxt_nick">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>20</y>
+       <width>101</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
+     </property>
+     <property name="text">
+      <string>닉네임최대로</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="userInfotxt_ip">
+     <property name="geometry">
+      <rect>
+       <x>410</x>
+       <y>20</y>
+       <width>121</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
+     </property>
+     <property name="text">
+      <string>255.255.255.255</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>400</x>
+       <y>20</y>
+       <width>151</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>(                                       )</string>
+     </property>
+    </widget>
     <widget class="QPushButton" name="createChatBtn">
      <property name="geometry">
       <rect>
-       <x>560</x>
+       <x>570</x>
        <y>10</y>
-       <width>81</width>
-       <height>61</height>
+       <width>201</width>
+       <height>31</height>
       </rect>
      </property>
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-      </font>
-     </property>
      <property name="text">
-      <string>채팅방
-생성</string>
+      <string>채팅방 생성</string>
      </property>
     </widget>
     <widget class="QPushButton" name="reloadChatList">
      <property name="geometry">
       <rect>
-       <x>740</x>
+       <x>780</x>
        <y>10</y>
-       <width>81</width>
-       <height>61</height>
+       <width>201</width>
+       <height>31</height>
       </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-      </font>
      </property>
      <property name="text">
-      <string>채팅방
-새로고침</string>
+      <string>새로고침</string>
      </property>
     </widget>
-    <widget class="QFrame" name="frame">
-     <property name="geometry">
-      <rect>
-       <x>830</x>
-       <y>10</y>
-       <width>161</width>
-       <height>61</height>
-      </rect>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <widget class="QLabel" name="label">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>30</y>
-        <width>141</width>
-        <height>19</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>(                                       )</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="userInfotxt_nick">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>10</y>
-        <width>141</width>
-        <height>21</height>
-       </rect>
-      </property>
-      <property name="layoutDirection">
-       <enum>Qt::LeftToRight</enum>
-      </property>
-      <property name="text">
-       <string>닉네임최대열글자임다</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="userInfotxt_ip">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>30</y>
-        <width>121</width>
-        <height>21</height>
-       </rect>
-      </property>
-      <property name="layoutDirection">
-       <enum>Qt::LeftToRight</enum>
-      </property>
-      <property name="text">
-       <string>255.255.255.255</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </widget>
-    <widget class="QPushButton" name="reloadUserList">
-     <property name="geometry">
-      <rect>
-       <x>650</x>
-       <y>10</y>
-       <width>81</width>
-       <height>61</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-      </font>
-     </property>
-     <property name="text">
-      <string>접속자
-새로고침</string>
-     </property>
-    </widget>
+    <zorder>label</zorder>
+    <zorder>tabWidget</zorder>
+    <zorder>userInfotxt_nick</zorder>
+    <zorder>userInfotxt_ip</zorder>
+    <zorder>createChatBtn</zorder>
+    <zorder>reloadChatList</zorder>
    </widget>
    <widget class="QWidget" name="page_3">
     <widget class="QPushButton" name="sendBtn">
