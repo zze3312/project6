@@ -23,12 +23,11 @@ class WindowClass(QMainWindow, form_class) :
         self.loginBtn.clicked.connect(self.fncLogin)
         self.inputNick.returnPressed.connect(self.fncLogin)
         self.adminBtn.clicked.connect(self.fncAdminPage)
-        self.goMainBtn.clicked.connect(self.fncMainPage)
         self.createChatBtn.clicked.connect(self.createChat)
         self.reloadUserList.clicked.connect(self.fncUserListPage)
         self.reloadChatList.clicked.connect(self.fncChatListPage)
         self.chatList.cellDoubleClicked.connect(self.enterChat)
-        #self.quitBtn.clicked.connect(client.fncQuit)
+        self.quitBtn.clicked.connect(self.fncQuit)
         self.chatMsg.returnPressed.connect(self.fncSendMsg)
         self.sendBtn.clicked.connect(self.fncSendMsg)
 
@@ -109,14 +108,23 @@ class WindowClass(QMainWindow, form_class) :
     def enterChat(self, row, col):
         global now_room_serial
         data = self.chatList.item(row, 0)
-        now_room_serial = client.reqConnectChat(self, client_socket, data.text())
+        self.mainWidget.setCurrentIndex(2)
         self.chatMsg.setDisabled(False)
+        now_room_serial = client.reqConnectChat(self, client_socket, data.text())
 
     def fncSendMsg(self):
         global client_socket, now_room_serial
         msg = self.chatMsg.text()
         client.sendMsg(client_socket, msg, now_room_serial)
         self.chatMsg.setText('')
+
+    def fncQuit(self):
+        global client_socket, now_room_serial
+        msg = 'quit'
+        client.sendMsg(client_socket, msg, now_room_serial)
+        self.chatMsg.setText('')
+        self.chatMsgList.clear()
+        self.mainWidget.setCurrentIndex(1)
 
 if __name__ == "__main__" :
     #QApplication : 프로그램을 실행시켜주는 클래스

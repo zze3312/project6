@@ -100,8 +100,10 @@ def clnt_handler(conn, count, send_queue):
         elif message['type'] == 'quit':
             message['type'] = 'exit'
             message['data'] = '< ' + message['user'] + ' > 님이 퇴장하셨습니다'
-            user_nick_list.remove(message['user'])
-            send_queue.put([message, conn, count])
+            send_message(message)
+            # TODO : 퇴장 프로세스 추가
+            #user_nick_list.remove(message['user'])
+            #send_queue.put([message, conn, count])
         # msg : 메세지 전송
         elif message['type'] == 'msg':
             send_message(message)
