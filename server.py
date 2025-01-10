@@ -3,6 +3,8 @@ import socket
 import threading
 import random
 import string
+import re
+import pymysql
 from queue import Queue
 
 sock_cnt = 0
@@ -10,7 +12,7 @@ client_socket_list = []
 user_nick_list = []
 chat_list = []
 chat_member_list = []
-bad_word_list = []
+
 
 def startServer(host='127.0.0.1', port = 9997):
 
@@ -49,6 +51,7 @@ def send_msg(socket_list, data):
             # client 본인이 보낸 메시지도 메세지내역에 보여야하므로 제한하지 않음
             print(f'클라이언트에게 전송한 메세지 : {data}')
             print(f'소켓정보 : {sock['conn']}')
+            data['data'] = chatFiltering(data['data'])
             sock['conn'].send(json.dumps(data).encode('utf-8'))
     except:
         pass
@@ -150,12 +153,7 @@ def exitChatRoom(req):
         if chat_member['serial'] == req['serial']:
             print(f'serial이 맞는 방을 찾았어요! 이방의 멤버는 : {chat_member['user_list']}')
 
-            mem_index = 0
-            # 목록에서 해당 멤버를 지움
-            for member in chat_member['user_list']:
-                if member['user'] == req['user'] and member['user_ip'] == req['user_ip']:
-                    del chat_member['user_list'][mem_index]
-                    break
+
             # 채팅방 주인이 나가면 방 폭발 / 채팅방 주인 아니면 채팅방 현재인원 1감소
             chat_idx = 0
             for chat_info in chat_list:
@@ -169,8 +167,15 @@ def exitChatRoom(req):
                         del chat_list[chat_idx]
                     else:
                         chat_info['now_cnt'] -= 1
+                        mem_index = 0
+                        for member in chat_member['user_list']:
+                            if member['user'] == req['user'] and member['user_ip'] == req['user_ip']:
+                                del chat_member['user_list'][mem_index]
+                                break
+                            mem_index += 1
                         break
                 chat_idx += 1
+
             req['type'] = 'exit'
             req['data'] = '< ' + req['user'] + ' > 님이 퇴장하셨습니다.'
             send_msg(chat_member['user_list'], req)
@@ -249,6 +254,22 @@ def createTocken(n):
 
 # 채팅 비속어 필터링
 def chatFiltering(str):
+    # TODO : 비속어로 지정할 단어 수정 필요
+    conn = db_conn()
+    cur = conn.cursor()
+    sql = 'select count(*) bad_word'
+    cur.execute(sql)
+    result = cur.fetchall()
+    print(result)
+
+    bad_word_list = ['ㅅㅂ', '시발', '개새끼', '미친']
     for word in bad_word_list:
-        str = str.replace()
+        str = re.sub(word, '***', str)
     return str
+
+def db_conn():
+    conn = pymysql.connect(host='127.0.0.1', user='jh', password='admin', db='project6', charset='utf8')
+    return conn
+
+def db_close(conn):
+    conn.close()
