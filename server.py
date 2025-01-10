@@ -10,6 +10,7 @@ client_socket_list = []
 user_nick_list = []
 chat_list = []
 chat_member_list = []
+bad_word_list = []
 
 def startServer(host='127.0.0.1', port = 9997):
 
@@ -45,13 +46,8 @@ def send_msg(socket_list, data):
         for sock in socket_list:
             print(f'이사람에게 보냄 : {sock}')
             print(f'send_msg -> data : {data}')
-            sock['conn']
-            if data['type'] == 'exit':
-                sock['conn'].send(json.dumps(data).encode('utf-8'))
-                sock['conn'].close()
             # client 본인이 보낸 메시지도 메세지내역에 보여야하므로 제한하지 않음
             print(f'클라이언트에게 전송한 메세지 : {data}')
-
             print(f'소켓정보 : {sock['conn']}')
             sock['conn'].send(json.dumps(data).encode('utf-8'))
     except:
@@ -98,12 +94,7 @@ def clnt_handler(conn, count, send_queue):
 
         # quit : 접속종료
         elif message['type'] == 'quit':
-            message['type'] = 'exit'
-            message['data'] = '< ' + message['user'] + ' > 님이 퇴장하셨습니다'
-            send_message(message)
-            # TODO : 퇴장 프로세스 추가
-            #user_nick_list.remove(message['user'])
-            #send_queue.put([message, conn, count])
+            exitChatRoom(message)
         # msg : 메세지 전송
         elif message['type'] == 'msg':
             send_message(message)
@@ -148,10 +139,44 @@ def enterChatRoom(req):
         print(f'for문 들어와서 챗 멤버를 확인해볼게요 : {chat_member}')
         if chat_member['serial'] == req['serial']:
             print(f'serial이 맞는 방을 찾았어요! 이방의 멤버는 : {chat_member['user_list']}')
-            req['data'] = '<' + req['user'] + ' >님이 입장하셨습니다.'
+            req['data'] = '< ' + req['user'] + ' > 님이 입장하셨습니다.'
             send_msg(chat_member['user_list'], req)
 
-# 채팅방 접속(목록에서)
+# 채팅방 퇴장 메세지 전달
+def exitChatRoom(req):
+    global chat_member_list, chat_list
+    for chat_member in chat_member_list:
+        print(f'for문 들어와서 챗 멤버를 확인해볼게요 : {chat_member}')
+        if chat_member['serial'] == req['serial']:
+            print(f'serial이 맞는 방을 찾았어요! 이방의 멤버는 : {chat_member['user_list']}')
+
+            mem_index = 0
+            # 목록에서 해당 멤버를 지움
+            for member in chat_member['user_list']:
+                if member['user'] == req['user'] and member['user_ip'] == req['user_ip']:
+                    del chat_member['user_list'][mem_index]
+                    break
+            # 채팅방 주인이 나가면 방 폭발 / 채팅방 주인 아니면 채팅방 현재인원 1감소
+            chat_idx = 0
+            for chat_info in chat_list:
+                if chat_info['serial'] == req['serial']:
+                    if chat_info['owner'] == req['user'] and chat_info['owner_ip'] == req['user_ip']:
+                        # 방없어졌다는 메세지 보내기
+                        req['type'] = 'rmroom'
+                        req['data'] = '방장이 퇴장하여 채팅방이 사라졌습니다.'
+                        send_msg(chat_member['user_list'], req)
+                        # 방없애기
+                        del chat_list[chat_idx]
+                    else:
+                        chat_info['now_cnt'] -= 1
+                        break
+                chat_idx += 1
+            req['type'] = 'exit'
+            req['data'] = '< ' + req['user'] + ' > 님이 퇴장하셨습니다.'
+            send_msg(chat_member['user_list'], req)
+            break
+
+# 채팅방 접속
 def connectChatRoom(conn, req):
     global chat_list, chat_member_list
     serial = req['serial']
@@ -179,6 +204,11 @@ def connectChatRoom(conn, req):
             for chat_info in chat_list:
                 if serial == chat_info['serial']:
                     chat_info['now_cnt'] += 1
+                    if chat_info['max_cnt'] < chat_info['now_cnt']:
+                        chat_info['now_cnt'] -= 1
+                        send_data = {'status': 'response', 'type': 'connect_chat', 'data': 'ER_MAXROOM', 'user': req['user'], 'user_ip': req['user_ip'], 'serial': req['serial']}
+                        conn.send(json.dumps(send_data).encode('utf-8'))
+                        return
                     break
 
             send_data = {'status': 'response', 'type': 'connect_chat', 'data': 'OK_NEW', 'user': req['user'], 'user_ip': req['user_ip'], 'serial' : req['serial']}
@@ -193,11 +223,11 @@ def createChatRoom(conn, req):
     room_serial = createTocken(6)
 
     # 채팅방 목록에 넣을 데이터
-    room_info = {'serial' : room_serial, 'room_name' : req['data'], 'owner' : req['user'], 'owner_ip' : req['user_ip'], 'max_cnt' : 10, 'now_cnt' : 1}
+    room_info = {'serial' : room_serial, 'room_name' : req['data']['room_name'], 'owner' : req['user'], 'owner_ip' : req['user_ip'], 'max_cnt' : req['data']['max_cnt'], 'now_cnt' : 0}
     chat_list.append(room_info)
 
     # 채팅방 접속자 목록에 넣을 데이터
-    room_info2 = { 'serial' : room_info['serial'], 'user_list' : [{'user' : req['user'], 'user_ip' : req['user_ip'], 'conn' : conn}] }
+    room_info2 = { 'serial' : room_info['serial'], 'user_list' : [] }
     chat_member_list.append(room_info2)
     print(f'채팅 사용자 목록 : {chat_member_list}')
 
@@ -216,3 +246,9 @@ def createTocken(n):
 
         if rand_str not in chat_list:
             return rand_str
+
+# 채팅 비속어 필터링
+def chatFiltering(str):
+    for word in bad_word_list:
+        str = str.replace()
+    return str

@@ -70,6 +70,7 @@ def sendMsg(sock, msg, room_serial):
 
 def recvMsg(self, sock):
     print('recvMsg 시작...')
+    global nickname, client_host
     while True:
         print('메세지 채갈 준비중....')
         msg = sock.recv(8192)
@@ -82,11 +83,13 @@ def recvMsg(self, sock):
             return
 
         print(f'type : {recv_data['type']}')
-        if recv_data['type'] == 'exit':
-            break
-        else:
-            print(f'서버에게서 온 메세지 : {recv_data['data']}')
+        print(f'서버에게서 온 메세지 : {recv_data['data']}')
+        if recv_data['data'] != 'OK_OLD' and recv_data['data'] != 'OK_NEW' and recv_data['data'] != 'OK':
             self.chatMsgList.addItem(recv_data['data'])
+
+        if (recv_data['type'] == 'exit' and recv_data['user'] == nickname and recv_data['user_ip'] == client_host) or recv_data['type'] == 'rmroom':
+            self.chatMsg.setDisabled(True)
+            break
     print('recvMsg 끝...')
 
 def getUserList(sock):
@@ -131,8 +134,12 @@ def getChatList(sock):
 def reqCreateChatRoom(self, sock):
     print('reqCreateChatRoom 시작...')
     global nickname, client_host
-    # TODO : 입력한 채팅방 이름으로 생성되도록 수정 (팝업 추가 예정)
-    send_data = {'status': 'request', 'type': 'create_chat', 'data': '테스트방이름', 'user' : nickname, 'user_ip' : client_host, 'serial' : '' }
+    # 입력한 채팅방 이름으로 생성되도록 수정 (팝업에서 가져옴)
+    room_name = self.newChatTitle.text()
+    max_cnt = self.newChatMemCnt.value()
+    room_info = {'room_name' : room_name, 'max_cnt' : max_cnt}
+
+    send_data = {'status': 'request', 'type': 'create_chat', 'data': room_info, 'user' : nickname, 'user_ip' : client_host, 'serial' : '' }
     sock.send(json.dumps(send_data).encode('utf-8'))
     print(f'접속자 {nickname} : 채팅방 생성 요청...')
 
@@ -162,12 +169,14 @@ def reqConnectChat(self, sock, room_serial):
 
     print(recv_data['data'])
 
-    if recv_data['data'] == 'OK_NEW':
+    if recv_data['data'] != 'ER_MAXROOM':
+        receiveThread = threading.Thread(target=recvMsg, args=(self, sock))
+        receiveThread.start()
+
         send_data = {'status': 'request', 'type': 'enter_chat_msg', 'data': '', 'user': nickname, 'user_ip': client_host, 'serial': room_serial}
         sock.send(json.dumps(send_data).encode('utf-8'))
+        print('reqConnectChat 끝...')
 
-    receiveThread = threading.Thread(target=recvMsg, args=(self, sock))
-    receiveThread.start()
-    print('reqConnectChat 끝...')
-
-    return room_serial
+        return room_serial
+    else:
+        return ''

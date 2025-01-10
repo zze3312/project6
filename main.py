@@ -23,25 +23,34 @@ class WindowClass(QMainWindow, form_class) :
         self.loginBtn.clicked.connect(self.fncLogin)
         self.inputNick.returnPressed.connect(self.fncLogin)
         self.adminBtn.clicked.connect(self.fncAdminPage)
+        self.createChatPopBtn.clicked.connect(self.createChatPop)
         self.createChatBtn.clicked.connect(self.createChat)
+        self.newChatTitle.returnPressed.connect(self.createChat)
+        self.createChatPopCloseBtn.clicked.connect(self.createChatPopClose)
         self.reloadUserList.clicked.connect(self.fncUserListPage)
         self.reloadChatList.clicked.connect(self.fncChatListPage)
         self.chatList.cellDoubleClicked.connect(self.enterChat)
         self.quitBtn.clicked.connect(self.fncQuit)
         self.chatMsg.returnPressed.connect(self.fncSendMsg)
         self.sendBtn.clicked.connect(self.fncSendMsg)
+        self.newChatPopup.setHidden(True)
 
         self.chatMsg.setDisabled(True)
 
     def fncLogin(self):
-        # 서버에 접속
-        global client_socket
-        client_socket = client.connectClient(self)
-        # 접속 후 메인화면으로 이동
-        self.mainWidget.setCurrentIndex(1)
+        input_text = self.inputNick.text()
 
-        self.fncUserListPage()
-        self.fncChatListPage()
+        if not input_text:
+            pass
+        else :
+            # 서버에 접속
+            global client_socket
+            client_socket = client.connectClient(self)
+            # 접속 후 메인화면으로 이동
+            self.mainWidget.setCurrentIndex(1)
+
+            self.fncUserListPage()
+            self.fncChatListPage()
 
     def fncAdminPage(self):
         # 관리자 페이지
@@ -76,6 +85,7 @@ class WindowClass(QMainWindow, form_class) :
         self.chatList.setColumnWidth(3, 110)
         chat_list = client.getChatList(client_socket)
 
+        print(type(chat_list))
         rowCnt = len(chat_list)
         self.chatList.setRowCount(rowCnt)
 
@@ -100,17 +110,37 @@ class WindowClass(QMainWindow, form_class) :
             item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             self.chatList.setItem(row, 3, item)
 
+    def createChatPop(self):
+        self.newChatPopup.setHidden(False)
+        self.newChatTitle.setFocus()
+
+    def createChatPopClose(self):
+        self.newChatTitle.setText('')
+        self.newChatMemCnt.setValue(0)
+        self.newChatPopup.setHidden(True)
+
     def createChat(self):
         global client_socket
         client.reqCreateChatRoom(self, client_socket)
+        self.newChatTitle.setText('')
+        self.newChatMemCnt.setValue(0)
+        self.newChatPopup.setHidden(True)
+
         self.fncChatListPage()
 
     def enterChat(self, row, col):
         global now_room_serial
         data = self.chatList.item(row, 0)
-        self.mainWidget.setCurrentIndex(2)
-        self.chatMsg.setDisabled(False)
+
         now_room_serial = client.reqConnectChat(self, client_socket, data.text())
+        if now_room_serial != '':
+            self.mainWidget.setCurrentIndex(2)
+            self.chatMsg.setText('')
+            self.chatMsgList.clear()
+            self.chatMsg.setDisabled(False)
+        else:
+            QMessageBox.information(self, "알림", "방이 가득찼습니다.")
+
 
     def fncSendMsg(self):
         global client_socket, now_room_serial
