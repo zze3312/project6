@@ -71,7 +71,6 @@ def clntHandler(conn):
         message['status'] = 'response'
 
         # type에 따른 분기처리
-        # TODO : 기능 추가 예정
         # nick : 닉네임 등록
         if message['type'] == 'nick':
             print('닉네임 등록 요청 받음....')
