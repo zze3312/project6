@@ -47,94 +47,6 @@ class WindowClass(QMainWindow, form_class) :
 
         self.chatMsg.setDisabled(True)
 
-    def roomInfoPopOpen(self):
-        global client_socket, now_room_serial
-        room_info = client.getRoomInfo(client_socket, now_room_serial)
-        self.roomInfoPop.setHidden(False)
-
-    def roomInfoPopClose(self):
-        self.roomInfoPop.setHidden(True)
-
-    def wordMngClose(self):
-        self.adminWidget.setCurrentIndex(0)
-        self.wordMngPop.setHidden(True)
-
-    def wordMngOpen(self):
-        self.inputAdminCode.setText('')
-        self.inputAdminCode.setFocus()
-        self.wordMngPop.setHidden(False)
-
-    def addWord(self):
-        global client_socket
-        input_word = self.inputWord.text()
-        word_list = client.reqAddWord(input_word)
-        self.inputWord.setText('')
-        self.wordList.clear()
-        self.wordList.setColumnWidth(0, 100)
-        self.wordList.setColumnWidth(1, 230)
-        rowCnt = len(word_list)
-        self.wordList.setRowCount(rowCnt)
-
-        if rowCnt > 0:
-            for row in range(rowCnt):
-                data = str(word_list[row]['seq'])
-                item = QTableWidgetItem(data)
-                item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-                self.wordList.setItem(row, 0, item)
-
-                data = word_list[row]['word']
-                item = QTableWidgetItem(data)
-                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-                self.wordList.setItem(row, 1, item)
-
-    def removeWord(self, row, col):
-        data = self.wordList.item(row, 0)
-        word_list = client.reqRemoveWord(data.text())
-
-        self.wordList.clear()
-        self.wordList.setColumnWidth(0, 90)
-        self.wordList.setColumnWidth(1, 230)
-        rowCnt = len(word_list)
-        self.wordList.setRowCount(rowCnt)
-
-        if rowCnt > 0:
-            for row in range(rowCnt):
-                data = str(word_list[row]['seq'])
-                item = QTableWidgetItem(data)
-                item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-                self.wordList.setItem(row, 0, item)
-
-                data = word_list[row]['word']
-                item = QTableWidgetItem(data)
-                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-                self.wordList.setItem(row, 1, item)
-
-    def loginAdmin(self):
-        input_code = self.inputAdminCode.text()
-
-        if input_code == ADMIN_CODE:
-            self.adminWidget.setCurrentIndex(1)
-            word_list = client.reqListWord()
-            self.wordList.clear()
-            self.wordList.setColumnWidth(0, 100)
-            self.wordList.setColumnWidth(1, 210)
-            rowCnt = len(word_list)
-            self.wordList.setRowCount(rowCnt)
-
-            if rowCnt > 0:
-                for row in range(rowCnt):
-                    data = str(word_list[row]['seq'])
-                    item = QTableWidgetItem(data)
-                    item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-                    self.wordList.setItem(row, 0, item)
-
-                    data = word_list[row]['word']
-                    item = QTableWidgetItem(data)
-                    item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-                    self.wordList.setItem(row, 1, item)
-        else:
-            QMessageBox.information(self, "알림", "관리코드가 틀렸습니다.")
-
     def login(self):
         input_text = self.inputNick.text()
 
@@ -143,7 +55,7 @@ class WindowClass(QMainWindow, form_class) :
         else :
             # 서버에 접속
             global client_socket
-            client_socket = client.connectClient(self)
+            client_socket = client.login(self)
             # 접속 후 메인화면으로 이동
             self.mainWidget.setCurrentIndex(1)
 
@@ -250,6 +162,97 @@ class WindowClass(QMainWindow, form_class) :
         self.chatMsg.setText('')
         self.chatMsgList.clear()
         self.mainWidget.setCurrentIndex(1)
+
+    def roomInfoPopOpen(self):
+        global client_socket, now_room_serial
+        room_info = client.getRoomInfo(client_socket, now_room_serial)
+        self.roomInfoPop.setHidden(False)
+
+    def roomInfoPopClose(self):
+        self.roomInfoPop.setHidden(True)
+
+    def wordMngOpen(self):
+        self.inputAdminCode.setText('')
+        self.inputAdminCode.setFocus()
+        self.wordMngPop.setHidden(False)
+
+    def wordMngClose(self):
+        self.adminWidget.setCurrentIndex(0)
+        self.wordMngPop.setHidden(True)
+
+    def addWord(self):
+        global client_socket
+        input_word = self.inputWord.text()
+        if input_word != '':
+            word_list = client.reqAddWord(input_word)
+            self.inputWord.setText('')
+            self.wordList.clear()
+            self.wordList.setColumnWidth(0, 100)
+            self.wordList.setColumnWidth(1, 230)
+            rowCnt = len(word_list)
+            self.wordList.setRowCount(rowCnt)
+
+            if rowCnt > 0:
+                for row in range(rowCnt):
+                    data = str(word_list[row]['seq'])
+                    item = QTableWidgetItem(data)
+                    item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+                    self.wordList.setItem(row, 0, item)
+
+                    data = word_list[row]['word']
+                    item = QTableWidgetItem(data)
+                    item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                    self.wordList.setItem(row, 1, item)
+        else:
+            QMessageBox.information(self, '알림', '단어를 입력해 주세요')
+
+    def removeWord(self, row, col):
+        data = self.wordList.item(row, 0)
+        word_list = client.reqRemoveWord(data.text())
+
+        self.wordList.clear()
+        self.wordList.setColumnWidth(0, 90)
+        self.wordList.setColumnWidth(1, 230)
+        rowCnt = len(word_list)
+        self.wordList.setRowCount(rowCnt)
+
+        if rowCnt > 0:
+            for row in range(rowCnt):
+                data = str(word_list[row]['seq'])
+                item = QTableWidgetItem(data)
+                item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+                self.wordList.setItem(row, 0, item)
+
+                data = word_list[row]['word']
+                item = QTableWidgetItem(data)
+                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                self.wordList.setItem(row, 1, item)
+
+    def loginAdmin(self):
+        input_code = self.inputAdminCode.text()
+
+        if input_code == ADMIN_CODE:
+            self.adminWidget.setCurrentIndex(1)
+            word_list = client.reqListWord()
+            self.wordList.clear()
+            self.wordList.setColumnWidth(0, 100)
+            self.wordList.setColumnWidth(1, 210)
+            rowCnt = len(word_list)
+            self.wordList.setRowCount(rowCnt)
+
+            if rowCnt > 0:
+                for row in range(rowCnt):
+                    data = str(word_list[row]['seq'])
+                    item = QTableWidgetItem(data)
+                    item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+                    self.wordList.setItem(row, 0, item)
+
+                    data = word_list[row]['word']
+                    item = QTableWidgetItem(data)
+                    item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                    self.wordList.setItem(row, 1, item)
+        else:
+            QMessageBox.information(self, "알림", "관리코드가 틀렸습니다.")
 
 if __name__ == "__main__" :
     #QApplication : 프로그램을 실행시켜주는 클래스

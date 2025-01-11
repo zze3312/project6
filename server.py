@@ -114,21 +114,26 @@ def clntHandler(conn):
         # connect_chat : 채팅방 접속
         elif message['type'] == 'connect_chat':
             connectChatRoom(conn, message)
+        # enter_chat_msg : 입장메세지 전송
         elif message['type'] == 'enter_chat_msg':
             enterChatRoom(message)
+        # word_list : 금지어 목록 불러오기
         elif message['type'] == 'word_list':
             word_list = getBadWordList()
             print(f'클라이언트에게 보낼 단어목록 : {word_list}')
             message['data'] = word_list
             conn.send(json.dumps(message).encode('utf-8'))
+        # add_word : 금지어 등록
         elif message['type'] == 'add_word':
             result = addWord(message['data'])
             message['data'] = result
             conn.send(json.dumps(message).encode('utf-8'))
+        # remove_word : 금지어 삭제
         elif message['type'] == 'remove_word':
             result = removeWord(message['data'])
             message['data'] = result
             conn.send(json.dumps(message).encode('utf-8'))
+        # room_info : 방정보 불러오기
         elif message['type'] == 'room_info':
             room_info = searchRoomInfo(message['data'])
             print(f'room_info : {room_info}')
@@ -136,7 +141,6 @@ def clntHandler(conn):
             conn.send(json.dumps(message).encode('utf-8'))
         else:
             pass
-        # 각각의 클라이언트의 메시지, 소켓정보, 쓰레드 번호를 send로 보냄
 
 def sendMessage(req):
     print(f'접속한 방에 채팅내용을 보냅니다!! 방 serial : {req['serial']}')

@@ -10,7 +10,7 @@ msg_recv_yn = True
 server_host = '127.0.0.1'
 server_port = 9999
 
-def connectClient(self):
+def login(self):
     print('connectClient 시작...')
 
     global nickname, client_host
@@ -94,8 +94,7 @@ def recvMsg(self, sock):
             self.roomCntTxt.setText(str(recv_data['data']['now_cnt']) + ' / ' + str(recv_data['data']['max_cnt']))
 
         else:
-            if recv_data['data'] != 'OK_OLD' and recv_data['data'] != 'OK_NEW' and recv_data['data'] != 'OK':
-                self.chatMsgList.addItem(recv_data['data'])
+            self.chatMsgList.addItem(recv_data['data'])
 
             if (recv_data['type'] == 'exit' and recv_data['user'] == nickname and recv_data['user_ip'] == client_host) or recv_data['type'] == 'rmroom':
                 self.chatMsg.setDisabled(True)
