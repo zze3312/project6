@@ -12,6 +12,7 @@ import client
 form_class = uic.loadUiType("main.ui")[0]
 client_socket = ''
 now_room_serial = ''
+ADMIN_CODE = 'admin'
 
 #화면을 띄우는데 사용되는 Class 선언
 class WindowClass(QMainWindow, form_class) :
@@ -20,28 +21,88 @@ class WindowClass(QMainWindow, form_class) :
         self.setupUi(self)
         self.setWindowTitle("채팅창")
         self.mainWidget.setCurrentIndex(0)
-        self.loginBtn.clicked.connect(self.fncLogin)
-        self.inputNick.returnPressed.connect(self.fncLogin)
-        self.adminBtn.clicked.connect(self.fncAdminPage)
+        self.loginBtn.clicked.connect(self.login)
+        self.inputNick.returnPressed.connect(self.login)
+        self.adminBtn.clicked.connect(self.wordMngOpen)
         self.createChatPopBtn.clicked.connect(self.createChatPop)
         self.createChatBtn.clicked.connect(self.createChat)
         self.newChatTitle.returnPressed.connect(self.createChat)
+        self.inputAdminCode.returnPressed.connect(self.loginAdmin)
         self.createChatPopCloseBtn.clicked.connect(self.createChatPopClose)
-        self.reloadUserList.clicked.connect(self.fncUserListPage)
-        self.reloadChatList.clicked.connect(self.fncChatListPage)
+        self.reloadUserList.clicked.connect(self.userListPage)
+        self.reloadChatList.clicked.connect(self.chatListPage)
         self.chatList.cellDoubleClicked.connect(self.enterChat)
-        self.quitBtn.clicked.connect(self.fncQuit)
-        self.chatMsg.returnPressed.connect(self.fncSendMsg)
-        self.sendBtn.clicked.connect(self.fncSendMsg)
+        self.quitBtn.clicked.connect(self.quit)
+        self.chatMsg.returnPressed.connect(self.sendMsg)
+        self.sendBtn.clicked.connect(self.sendMsg)
+        self.submitWord.clicked.connect(self.addWord)
+        self.inputWord.returnPressed.connect(self.addWord)
+        self.wordMngPopCloseBtn.clicked.connect(self.wordMngClose)
         self.newChatPopup.setHidden(True)
+        self.wordMngPop.setHidden(True)
 
         self.chatMsg.setDisabled(True)
 
-    def fncLogin(self):
+    def wordMngClose(self):
+        self.wordMngPop.setHidden(True)
+
+    def wordMngOpen(self):
+        self.inputAdminCode.setText('')
+        self.inputAdminCode.setFocus()
+        self.wordMngPop.setHidden(False)
+
+    def addWord(self):
+        global client_socket
+        input_word = self.inputWord.text()
+        word_list = client.reqAddWord(input_word)
+        self.inputWord.setText('')
+        self.wordList.setColumnWidth(0, 100)
+        self.wordList.setColumnWidth(1, 230)
+        rowCnt = len(word_list)
+        self.wordList.setRowCount(rowCnt)
+
+        if rowCnt > 0:
+            for row in range(rowCnt):
+                data = str(word_list[row]['seq'])
+                item = QTableWidgetItem(data)
+                item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+                self.wordList.setItem(row, 0, item)
+
+                data = word_list[row]['word']
+                item = QTableWidgetItem(data)
+                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                self.wordList.setItem(row, 1, item)
+
+    def loginAdmin(self):
+        input_code = self.inputAdminCode.text()
+
+        if input_code == ADMIN_CODE:
+            self.adminWidget.setCurrentIndex(1)
+            word_list = client.reqListWord()
+            self.wordList.setColumnWidth(0, 100)
+            self.wordList.setColumnWidth(1, 210)
+            rowCnt = len(word_list)
+            self.wordList.setRowCount(rowCnt)
+
+            if rowCnt > 0:
+                for row in range(rowCnt):
+                    data = str(word_list[row]['seq'])
+                    item = QTableWidgetItem(data)
+                    item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+                    self.wordList.setItem(row, 0, item)
+
+                    data = word_list[row]['word']
+                    item = QTableWidgetItem(data)
+                    item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                    self.wordList.setItem(row, 1, item)
+        else:
+            QMessageBox.information(self, "알림", "관리코드가 틀렸습니다.")
+
+    def login(self):
         input_text = self.inputNick.text()
 
         if not input_text:
-            pass
+            QMessageBox.information(self, "알림", "닉네임을 입력해주세요.")
         else :
             # 서버에 접속
             global client_socket
@@ -49,18 +110,14 @@ class WindowClass(QMainWindow, form_class) :
             # 접속 후 메인화면으로 이동
             self.mainWidget.setCurrentIndex(1)
 
-            self.fncUserListPage()
-            self.fncChatListPage()
+            self.userListPage()
+            self.chatListPage()
 
-    def fncAdminPage(self):
-        # 관리자 페이지
-        self.mainWidget.setCurrentIndex(2)
-
-    def fncMainPage(self):
+    def mainPage(self):
         # 로그인 페이지
         self.mainWidget.setCurrentIndex(0)
 
-    def fncUserListPage(self):
+    def userListPage(self):
         global client_socket
         self.loginUserList.setColumnWidth(0, 970)
         login_list = client.getUserList(client_socket)
@@ -76,7 +133,7 @@ class WindowClass(QMainWindow, form_class) :
             item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             self.loginUserList.setItem(row, 0, item)
 
-    def fncChatListPage(self):
+    def chatListPage(self):
         global client_socket
         # 970
         self.chatList.setColumnWidth(0, 140)
@@ -126,7 +183,7 @@ class WindowClass(QMainWindow, form_class) :
         self.newChatMemCnt.setValue(0)
         self.newChatPopup.setHidden(True)
 
-        self.fncChatListPage()
+        self.chatListPage()
 
     def enterChat(self, row, col):
         global now_room_serial
@@ -142,13 +199,13 @@ class WindowClass(QMainWindow, form_class) :
             QMessageBox.information(self, "알림", "방이 가득찼습니다.")
 
 
-    def fncSendMsg(self):
+    def sendMsg(self):
         global client_socket, now_room_serial
         msg = self.chatMsg.text()
         client.sendMsg(client_socket, msg, now_room_serial)
         self.chatMsg.setText('')
 
-    def fncQuit(self):
+    def quit(self):
         global client_socket, now_room_serial
         msg = 'quit'
         client.sendMsg(client_socket, msg, now_room_serial)

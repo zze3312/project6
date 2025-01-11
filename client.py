@@ -7,8 +7,10 @@ chat_list = []
 nickname = ''
 client_host = ''
 msg_recv_yn = True
+server_host = '127.0.0.1'
+server_port = 9999
 
-def connectClient(self, server_host = '127.0.0.1', server_port = 9997):
+def connectClient(self):
     print('connectClient 시작...')
 
     global nickname, client_host
@@ -180,3 +182,58 @@ def reqConnectChat(self, sock, room_serial):
         return room_serial
     else:
         return ''
+
+def reqAddWord(word):
+    print('reqAddWord 시작...')
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((server_host, server_port))
+    send_data = {'status': 'request', 'type': 'add_word', 'data': word, 'user': '', 'user_ip': client_host, 'serial': ''}
+    print(send_data)
+    sock.send(json.dumps(send_data).encode('utf-8'))
+
+    data = sock.recv(8192)
+    try:
+        recv_data = json.loads(data.decode('utf-8'))
+    except json.JSONDecodeError:
+        print(f"잘못된 JSON 형식의 데이터가 들어왔습니다. reqConnectChat : {data}")
+        return
+
+    if recv_data['data'] != 'ER':
+        send_data = {'status': 'request', 'type': 'word_list', 'data': '', 'user': '', 'user_ip': client_host, 'serial': ''}
+        sock.send(json.dumps(send_data).encode('utf-8'))
+
+        data = sock.recv(8192)
+        try:
+            recv_data = json.loads(data.decode('utf-8'))
+        except json.JSONDecodeError:
+            print(f"잘못된 JSON 형식의 데이터가 들어왔습니다. reqConnectChat : {data}")
+            return
+
+        word_list = recv_data['data']
+        sock.close()
+        print('reqAddWord 끝...')
+        return word_list
+    else:
+        sock.close()
+        print('reqAddWord 끝...')
+        return []
+
+
+def reqListWord():
+    print('reqListWord 시작...')
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((server_host, server_port))
+    send_data = {'status': 'request', 'type': 'word_list', 'data': '', 'user': '', 'user_ip': client_host, 'serial': ''}
+    sock.send(json.dumps(send_data).encode('utf-8'))
+
+    data = sock.recv(8192)
+    try:
+        recv_data = json.loads(data.decode('utf-8'))
+    except json.JSONDecodeError:
+        print(f"잘못된 JSON 형식의 데이터가 들어왔습니다. reqConnectChat : {data}")
+        return
+
+    word_list = recv_data['data']
+    sock.close()
+    print('reqListWord 끝...')
+    return word_list

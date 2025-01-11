@@ -29,7 +29,7 @@
     <string notr="true">background-color: rgb(255, 255, 255);</string>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QLineEdit" name="inputNick">
@@ -74,8 +74,161 @@
       </rect>
      </property>
      <property name="text">
-      <string>관리자</string>
+      <string>금지어 관리</string>
      </property>
+    </widget>
+    <widget class="QFrame" name="wordMngPop">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>180</y>
+       <width>391</width>
+       <height>321</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <widget class="QStackedWidget" name="adminWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>50</y>
+        <width>371</width>
+        <height>261</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="page_4">
+       <widget class="QLineEdit" name="inputAdminCode">
+        <property name="geometry">
+         <rect>
+          <x>100</x>
+          <y>110</y>
+          <width>171</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="echoMode">
+         <enum>QLineEdit::Password</enum>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_6">
+        <property name="geometry">
+         <rect>
+          <x>100</x>
+          <y>80</y>
+          <width>171</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>관리코드를 입력해 주세요</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="page_5">
+       <widget class="QPushButton" name="submitWord">
+        <property name="geometry">
+         <rect>
+          <x>270</x>
+          <y>210</y>
+          <width>88</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>등록</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="inputWord">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>210</y>
+          <width>251</width>
+          <height>41</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QTableWidget" name="wordList">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>351</width>
+          <height>191</height>
+         </rect>
+        </property>
+        <property name="mouseTracking">
+         <bool>false</bool>
+        </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="dragDropOverwriteMode">
+         <bool>false</bool>
+        </property>
+        <column>
+         <property name="text">
+          <string>일련번호</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>단어</string>
+         </property>
+        </column>
+       </widget>
+      </widget>
+     </widget>
+     <widget class="QLabel" name="label_5">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>111</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>금지어 관리</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="wordMngPopCloseBtn">
+      <property name="geometry">
+       <rect>
+        <x>347</x>
+        <y>10</y>
+        <width>31</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>x</string>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QWidget" name="page_2">
@@ -97,7 +250,7 @@
       <string notr="true">QTabBar::tab { min-width: 150px; min-height: 70px; }</string>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">

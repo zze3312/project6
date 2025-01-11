@@ -7,14 +7,13 @@ import re
 import pymysql
 from queue import Queue
 
-sock_cnt = 0
 client_socket_list = []
 user_nick_list = []
 chat_list = []
 chat_member_list = []
 
 
-def startServer(host='127.0.0.1', port = 9997):
+def startServer(host='127.0.0.1', port = 9999):
 
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # 서버 닫힐 때 클라이언트 전부 connect 끊기
@@ -24,22 +23,20 @@ def startServer(host='127.0.0.1', port = 9997):
     print(f'서버가 실행되었습니다 : {host} {port}')
 
     global sock_cnt, client_socket_list
-    send_queue = Queue()
 
     while True:
-        sock_cnt += 1
         client_socket, client_addr = server_sock.accept()
         client_socket_list.append(client_socket)
 
         # 소켓에 연결된 각각의 클라이언트의 메시지에 응답할 쓰레드
-        thread = threading.Thread(target=clnt_handler, args=(client_socket, sock_cnt, send_queue))
+        thread = threading.Thread(target=clntHandler, args=(client_socket, ))
         thread.start()
 
         # TODO : 실시간 목록을 불러오게 할 쓰레드 추가??
 
 
 # 메세지 전달
-def send_msg(socket_list, data):
+def sendMsg(socket_list, data):
     # [{'user': req['user'], 'user_ip' : req['user_ip'], 'conn': conn}]
     # [message, conn, count]
     print(f'메세지 돌릴 목록 : {socket_list}')
@@ -47,7 +44,7 @@ def send_msg(socket_list, data):
         # for 문을 돌면서 모든 클라이언트에게 동일한 메시지를 보냄
         for sock in socket_list:
             print(f'이사람에게 보냄 : {sock}')
-            print(f'send_msg -> data : {data}')
+            print(f'sendMsg -> data : {data}')
             # client 본인이 보낸 메시지도 메세지내역에 보여야하므로 제한하지 않음
             print(f'클라이언트에게 전송한 메세지 : {data}')
             print(f'소켓정보 : {sock['conn']}')
@@ -57,7 +54,7 @@ def send_msg(socket_list, data):
         pass
 
 
-def clnt_handler(conn, count, send_queue):
+def clntHandler(conn):
     global user_nick_list, chat_list
     while True:
         print('메세지 전달 요청 기다리는중...')
@@ -66,7 +63,7 @@ def clnt_handler(conn, count, send_queue):
         try:
             message = json.loads(data.decode('utf-8'))
         except json.JSONDecodeError:
-            print(f"잘못된 JSON 형식의 데이터가 들어왔습니다. clnt_handler : {data}")
+            print(f'잘못된 JSON 형식의 데이터가 들어왔습니다. clntHandler : {data}')
             return
 
         print(f'클라이언트로부터 받은 메세지 : {message}')
@@ -100,7 +97,7 @@ def clnt_handler(conn, count, send_queue):
             exitChatRoom(message)
         # msg : 메세지 전송
         elif message['type'] == 'msg':
-            send_message(message)
+            sendMessage(message)
         # user_list : 접속자 목록 불러오기
         elif message['type'] == 'user_list':
             message['data'] = user_nick_list
@@ -119,13 +116,21 @@ def clnt_handler(conn, count, send_queue):
         elif message['type'] == 'connect_chat':
             connectChatRoom(conn, message)
         elif message['type'] == 'enter_chat_msg':
-            print('여기 왔어용....')
             enterChatRoom(message)
+        elif message['type'] == 'word_list':
+            word_list = getBadWordList()
+            print(f'클라이언트에게 보낼 단어목록 : {word_list}')
+            message['data'] = word_list
+            conn.send(json.dumps(message).encode('utf-8'))
+        elif message['type'] == 'add_word':
+            result = addWord(message['data'])
+            message['data'] = result
+            conn.send(json.dumps(message).encode('utf-8'))
         else:
             pass
         # 각각의 클라이언트의 메시지, 소켓정보, 쓰레드 번호를 send로 보냄
 
-def send_message(req):
+def sendMessage(req):
     print(f'접속한 방에 채팅내용을 보냅니다!! 방 serial : {req['serial']}')
     global chat_member_list
     for chat_member in chat_member_list:
@@ -133,7 +138,7 @@ def send_message(req):
             print(f'serial이 맞는 방을 찾았어요! 이방의 멤버는 : {chat_member['user_list']}')
             req['data'] = '< ' + req['user'] + ' > ' + req['data']
             print(f'이렇게 메세지를 보낼게요... : {req['data']}')
-            send_msg(chat_member['user_list'], req)
+            sendMsg(chat_member['user_list'], req)
 
 # 채팅방 입장 메세지 전달
 def enterChatRoom(req):
@@ -143,7 +148,7 @@ def enterChatRoom(req):
         if chat_member['serial'] == req['serial']:
             print(f'serial이 맞는 방을 찾았어요! 이방의 멤버는 : {chat_member['user_list']}')
             req['data'] = '< ' + req['user'] + ' > 님이 입장하셨습니다.'
-            send_msg(chat_member['user_list'], req)
+            sendMsg(chat_member['user_list'], req)
 
 # 채팅방 퇴장 메세지 전달
 def exitChatRoom(req):
@@ -162,7 +167,7 @@ def exitChatRoom(req):
                         # 방없어졌다는 메세지 보내기
                         req['type'] = 'rmroom'
                         req['data'] = '방장이 퇴장하여 채팅방이 사라졌습니다.'
-                        send_msg(chat_member['user_list'], req)
+                        sendMsg(chat_member['user_list'], req)
                         # 방없애기
                         del chat_list[chat_idx]
                     else:
@@ -178,7 +183,7 @@ def exitChatRoom(req):
 
             req['type'] = 'exit'
             req['data'] = '< ' + req['user'] + ' > 님이 퇴장하셨습니다.'
-            send_msg(chat_member['user_list'], req)
+            sendMsg(chat_member['user_list'], req)
             break
 
 # 채팅방 접속
@@ -254,22 +259,50 @@ def createTocken(n):
 
 # 채팅 비속어 필터링
 def chatFiltering(str):
-    # TODO : 비속어로 지정할 단어 수정 필요
-    conn = db_conn()
-    cur = conn.cursor()
-    sql = 'select count(*) bad_word'
-    cur.execute(sql)
-    result = cur.fetchall()
-    print(result)
-
-    bad_word_list = ['ㅅㅂ', '시발', '개새끼', '미친']
-    for word in bad_word_list:
-        str = re.sub(word, '***', str)
+    # 금지어 관리에서 등록해놓은 단어 걸림
+    word_list = getBadWordList()
+    for word in word_list:
+        str = re.sub(word['word'], '***', str)
     return str
 
-def db_conn():
+def dbConn():
     conn = pymysql.connect(host='127.0.0.1', user='jh', password='admin', db='project6', charset='utf8')
     return conn
 
-def db_close(conn):
+def dbClose(conn):
     conn.close()
+
+def getBadWordList():
+    bad_word_list = []
+
+    conn = dbConn()
+    cur = conn.cursor()
+    sql = 'select seq, word from bad_word'
+    cur.execute(sql)
+
+    while True:
+        row = cur.fetchone()
+        print(row)
+        if row == None:
+            break
+
+        bad_word_list.append({'seq': row[0], 'word': row[1]})
+
+    dbClose(conn)
+    return bad_word_list
+
+def addWord(word):
+    conn = dbConn()
+    cur = conn.cursor()
+    sql = 'insert into bad_word values(default, \'' + word + '\')'
+    print(sql)
+    try:
+        cur.execute(sql)
+        conn.commit()
+    except:
+        print("insert 오류!")
+        return 'ER'
+    finally:
+        dbClose(conn)
+        
+    return 'OK'
