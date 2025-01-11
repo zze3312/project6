@@ -38,12 +38,25 @@ class WindowClass(QMainWindow, form_class) :
         self.submitWord.clicked.connect(self.addWord)
         self.inputWord.returnPressed.connect(self.addWord)
         self.wordMngPopCloseBtn.clicked.connect(self.wordMngClose)
+        self.wordList.cellDoubleClicked.connect(self.removeWord)
         self.newChatPopup.setHidden(True)
         self.wordMngPop.setHidden(True)
+        self.roomInfoPop.setHidden(True)
+        self.roomInfoOpenBtn.clicked.connect(self.roomInfoPopOpen)
+        self.roomInfoCloseBtn.clicked.connect(self.roomInfoPopClose)
 
         self.chatMsg.setDisabled(True)
 
+    def roomInfoPopOpen(self):
+        global client_socket, now_room_serial
+        room_info = client.getRoomInfo(client_socket, now_room_serial)
+        self.roomInfoPop.setHidden(False)
+
+    def roomInfoPopClose(self):
+        self.roomInfoPop.setHidden(True)
+
     def wordMngClose(self):
+        self.adminWidget.setCurrentIndex(0)
         self.wordMngPop.setHidden(True)
 
     def wordMngOpen(self):
@@ -56,7 +69,30 @@ class WindowClass(QMainWindow, form_class) :
         input_word = self.inputWord.text()
         word_list = client.reqAddWord(input_word)
         self.inputWord.setText('')
+        self.wordList.clear()
         self.wordList.setColumnWidth(0, 100)
+        self.wordList.setColumnWidth(1, 230)
+        rowCnt = len(word_list)
+        self.wordList.setRowCount(rowCnt)
+
+        if rowCnt > 0:
+            for row in range(rowCnt):
+                data = str(word_list[row]['seq'])
+                item = QTableWidgetItem(data)
+                item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+                self.wordList.setItem(row, 0, item)
+
+                data = word_list[row]['word']
+                item = QTableWidgetItem(data)
+                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                self.wordList.setItem(row, 1, item)
+
+    def removeWord(self, row, col):
+        data = self.wordList.item(row, 0)
+        word_list = client.reqRemoveWord(data.text())
+
+        self.wordList.clear()
+        self.wordList.setColumnWidth(0, 90)
         self.wordList.setColumnWidth(1, 230)
         rowCnt = len(word_list)
         self.wordList.setRowCount(rowCnt)
@@ -79,6 +115,7 @@ class WindowClass(QMainWindow, form_class) :
         if input_code == ADMIN_CODE:
             self.adminWidget.setCurrentIndex(1)
             word_list = client.reqListWord()
+            self.wordList.clear()
             self.wordList.setColumnWidth(0, 100)
             self.wordList.setColumnWidth(1, 210)
             rowCnt = len(word_list)
@@ -209,6 +246,7 @@ class WindowClass(QMainWindow, form_class) :
         global client_socket, now_room_serial
         msg = 'quit'
         client.sendMsg(client_socket, msg, now_room_serial)
+        now_room_serial = ''
         self.chatMsg.setText('')
         self.chatMsgList.clear()
         self.mainWidget.setCurrentIndex(1)

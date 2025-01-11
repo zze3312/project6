@@ -126,6 +126,15 @@ def clntHandler(conn):
             result = addWord(message['data'])
             message['data'] = result
             conn.send(json.dumps(message).encode('utf-8'))
+        elif message['type'] == 'remove_word':
+            result = removeWord(message['data'])
+            message['data'] = result
+            conn.send(json.dumps(message).encode('utf-8'))
+        elif message['type'] == 'room_info':
+            room_info = searchRoomInfo(message['data'])
+            print(f'room_info : {room_info}')
+            message['data'] = room_info
+            conn.send(json.dumps(message).encode('utf-8'))
         else:
             pass
         # 각각의 클라이언트의 메시지, 소켓정보, 쓰레드 번호를 send로 보냄
@@ -306,3 +315,24 @@ def addWord(word):
         dbClose(conn)
         
     return 'OK'
+
+def removeWord(seq):
+    conn = dbConn()
+    cur = conn.cursor()
+    sql = 'delete from bad_word where seq = \'' + str(seq) + '\''
+    print(sql)
+    try:
+        cur.execute(sql)
+        conn.commit()
+    except:
+        print("delete 오류!")
+        return 'ER'
+    finally:
+        dbClose(conn)
+
+    return 'OK'
+
+def searchRoomInfo(serial):
+    for room in chat_list:
+        if room['serial'] == serial:
+            return room

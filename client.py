@@ -86,12 +86,20 @@ def recvMsg(self, sock):
 
         print(f'type : {recv_data['type']}')
         print(f'서버에게서 온 메세지 : {recv_data['data']}')
-        if recv_data['data'] != 'OK_OLD' and recv_data['data'] != 'OK_NEW' and recv_data['data'] != 'OK':
-            self.chatMsgList.addItem(recv_data['data'])
+        if recv_data['type'] == 'room_info':
+            self.roomTypeTxt.setText('')
+            self.roomSerialTxt.setText(recv_data['data']['serial'])
+            self.roomNameTxt.setText(recv_data['data']['room_name'])
+            self.roomOwnerTxt.setText(recv_data['data']['owner'])
+            self.roomCntTxt.setText(str(recv_data['data']['now_cnt']) + ' / ' + str(recv_data['data']['max_cnt']))
 
-        if (recv_data['type'] == 'exit' and recv_data['user'] == nickname and recv_data['user_ip'] == client_host) or recv_data['type'] == 'rmroom':
-            self.chatMsg.setDisabled(True)
-            break
+        else:
+            if recv_data['data'] != 'OK_OLD' and recv_data['data'] != 'OK_NEW' and recv_data['data'] != 'OK':
+                self.chatMsgList.addItem(recv_data['data'])
+
+            if (recv_data['type'] == 'exit' and recv_data['user'] == nickname and recv_data['user_ip'] == client_host) or recv_data['type'] == 'rmroom':
+                self.chatMsg.setDisabled(True)
+                break
     print('recvMsg 끝...')
 
 def getUserList(sock):
@@ -157,6 +165,7 @@ def reqCreateChatRoom(self, sock):
     print('reqCreateChatRoom 끝...')
 
 def reqConnectChat(self, sock, room_serial):
+    global nickname, client_host
     print('reqConnectChat 시작...')
     send_data = {'status': 'request', 'type': 'connect_chat', 'data': '' , 'user': nickname, 'user_ip': client_host, 'serial' : room_serial}
     sock.send(json.dumps(send_data).encode('utf-8'))
@@ -237,3 +246,43 @@ def reqListWord():
     sock.close()
     print('reqListWord 끝...')
     return word_list
+
+def reqRemoveWord(seq):
+    print('reqAddWord 시작...')
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((server_host, server_port))
+    send_data = {'status': 'request', 'type': 'remove_word', 'data': seq, 'user': '', 'user_ip': client_host, 'serial': ''}
+    print(send_data)
+    sock.send(json.dumps(send_data).encode('utf-8'))
+
+    data = sock.recv(8192)
+    try:
+        recv_data = json.loads(data.decode('utf-8'))
+    except json.JSONDecodeError:
+        print(f"잘못된 JSON 형식의 데이터가 들어왔습니다. reqConnectChat : {data}")
+        return
+
+    if recv_data['data'] != 'ER':
+        send_data = {'status': 'request', 'type': 'word_list', 'data': '', 'user': '', 'user_ip': client_host, 'serial': ''}
+        sock.send(json.dumps(send_data).encode('utf-8'))
+
+        data = sock.recv(8192)
+        try:
+            recv_data = json.loads(data.decode('utf-8'))
+        except json.JSONDecodeError:
+            print(f"잘못된 JSON 형식의 데이터가 들어왔습니다. reqConnectChat : {data}")
+            return
+
+        word_list = recv_data['data']
+        sock.close()
+        print('reqAddWord 끝...')
+        return word_list
+    else:
+        sock.close()
+        print('reqAddWord 끝...')
+        return []
+
+def getRoomInfo(sock, serial):
+    global nickname, client_host
+    send_data = {'status': 'request', 'type': 'room_info', 'data': serial, 'user': nickname, 'user_ip': client_host, 'serial': serial}
+    sock.send(json.dumps(send_data).encode('utf-8'))
